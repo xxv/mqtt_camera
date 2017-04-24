@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Timelapse Camera</string>
+    <string name="drawer_open">Open drawer</string>
+    <string name="drawer_close">Close drawer</string>
+    <array name="drawer_options">
+        <item>Camera</item>
+        <item>Settings</item>
+    </array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="request_permission">Camera permission thing</string>
+    <string name="camera_error">Error initializing camera</string>
+    <string name="intro_message">Kitten</string>
+</resources>
