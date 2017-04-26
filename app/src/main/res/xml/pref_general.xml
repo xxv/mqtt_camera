@@ -1,0 +1,43 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="mqtt_remote_enable"
+        android:summary="@string/pref_mqtt_remote_control_summary"
+        android:title="@string/pref_mqtt_remote_control_title" />
+
+    <EditTextPreference
+        android:defaultValue="example.com"
+        android:dependency="mqtt_remote_enable"
+        android:inputType="textUri"
+        android:key="mqtt_hostname"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_mqtt_hostname_title" />
+
+    <EditTextPreference
+        android:defaultValue="1883"
+        android:dependency="mqtt_remote_enable"
+        android:inputType="number"
+        android:key="mqtt_port"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_mqtt_port_title" />
+    <SwitchPreference
+        android:defaultValue="false"
+        android:dependency="mqtt_remote_enable"
+        android:key="mqtt_ssl"
+        android:title="Use SSL/TLS" />
+    <EditTextPreference
+        android:dependency="mqtt_remote_enable"
+        android:inputType="textShortMessage|textNoSuggestions"
+        android:key="mqtt_username"
+        android:title="User Name" />
+    <EditTextPreference
+        android:dependency="mqtt_remote_enable"
+        android:inputType="textPassword"
+        android:key="mqtt_password"
+        android:title="Password" />
+</PreferenceScreen>

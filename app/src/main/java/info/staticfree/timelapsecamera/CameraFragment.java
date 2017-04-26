@@ -23,7 +23,7 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
@@ -47,9 +47,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
 import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -60,9 +62,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 public class CameraFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
+    MqttAndroidClient mqttClient;
     /**
      * Conversion from screen rotation to JPEG orientation.
      */
@@ -92,7 +102,7 @@ public class CameraFragment extends Fragment
     /**
      * Tag for the {@link Log}.
      */
-    private static final String TAG = CameraFragment.class.getSimpleName();
+    private static final String TAG = "MQTTCamera";
 
     /**
      * Camera state: Showing camera preview.
@@ -244,7 +254,9 @@ public class CameraFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), outputFile));
+            //backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), outputFile));
+            backgroundHandler.post(new ImagePublisher(reader.acquireNextImage(), mqttClient,
+                    "camera/image"));
         }
     };
 
@@ -352,15 +364,10 @@ public class CameraFragment extends Fragment
      *
      * @param text The message to show
      */
-    private void showToast(final String text) {
-        final Activity activity = getActivity();
+    private void showToast(String text) {
+        Activity activity = getActivity();
         if (activity != null) {
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-                }
-            });
+            activity.runOnUiThread(() -> Toast.makeText(activity, text, Toast.LENGTH_SHORT).show());
         }
     }
 
@@ -430,6 +437,7 @@ public class CameraFragment extends Fragment
         super.onActivityCreated(savedInstanceState);
         outputFile = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
                 "pic.jpg");
+        connectMqtt();
     }
 
     @Override
@@ -453,6 +461,93 @@ public class CameraFragment extends Fragment
         closeCamera();
         stopBackgroundThread();
         super.onPause();
+
+        if (mqttClient != null) {
+            mqttClient.close();
+        }
+    }
+
+    private void connectMqtt() {
+        SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(getActivity());
+        if (!preferences.getBoolean("mqtt_remote_enable", false)) {
+            return;
+        }
+
+        String host = preferences.getString("mqtt_hostname", null);
+        int port = Integer.valueOf(preferences.getString("mqtt_port", "0"));
+        boolean ssl = preferences.getBoolean("mqtt_ssl", false);
+
+        mqttClient =
+                new MqttAndroidClient(getActivity().getApplicationContext(),
+                        (ssl ? "ssl://" : "tcp://") + host + ':' + port,
+                        "cameraClient");
+        mqttClient.setCallback(new MqttCallbackExtended() {
+
+            @Override
+            public void connectComplete(boolean reconnect, String serverURI) {
+                Toast.makeText(getActivity(), "Connected to: " + serverURI, Toast.LENGTH_SHORT)
+                        .show();
+            }
+
+            @Override
+            public void connectionLost(Throwable cause) {
+                Log.e(TAG, "Disconnected", cause);
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                onMqttMessage(topic, message);
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken token) {
+
+            }
+        });
+
+        MqttConnectOptions connectOptions = new MqttConnectOptions();
+        String username = preferences.getString("mqtt_username", null);
+
+        if (!TextUtils.isEmpty(username)) {
+            connectOptions.setUserName("steve");
+        }
+
+        String password = preferences.getString("mqtt_password", null);
+
+        if (!TextUtils.isEmpty(password)) {
+            connectOptions.setPassword(password.toCharArray());
+        }
+
+        connectOptions.setCleanSession(true);
+        connectOptions.setAutomaticReconnect(true);
+
+        try {
+            Log.d(TAG, "Connecting to MQTT...");
+            mqttClient.connect(connectOptions, null, new IMqttActionListener() {
+                @Override
+                public void onSuccess(IMqttToken asyncActionToken) {
+                    try {
+                        mqttClient.subscribe("camera/#", 0);
+                    } catch (MqttException e) {
+                        Log.e(TAG, "Error subscribing", e);
+                    }
+                }
+
+                @Override
+                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+                    Log.e(TAG, "Could not connect", exception);
+                }
+            });
+        } catch (MqttException e) {
+            Log.e(TAG, "Error connecting to MQTT server", e);
+        }
+    }
+
+    private void onMqttMessage(String topic, MqttMessage message) {
+        if ("camera/shutter".equals(topic)) {
+            takePicture();
+        }
     }
 
     private void requestCameraPermission() {
@@ -582,7 +677,7 @@ public class CameraFragment extends Fragment
                 return;
             }
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error accessing camera", e);
         } catch (NullPointerException e) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
@@ -591,26 +686,24 @@ public class CameraFragment extends Fragment
         }
     }
 
-    /**
-     * Opens the camera specified by {@link Camera2BasicFragment#mCameraId}.
-     */
     private void openCamera(int width, int height) {
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             requestCameraPermission();
             return;
         }
+
         setUpCameraOutputs(width, height);
         configureTransform(width, height);
-        Activity activity = getActivity();
-        CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+        CameraManager manager =
+                (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
             manager.openCamera(cameraId, stateCallback, backgroundHandler);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error opening camera", e);
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera opening.", e);
         }
@@ -660,7 +753,7 @@ public class CameraFragment extends Fragment
             backgroundThread = null;
             backgroundHandler = null;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error stopping background thread", e);
         }
     }
 
@@ -709,7 +802,7 @@ public class CameraFragment extends Fragment
                                 captureSession.setRepeatingRequest(mPreviewRequest,
                                         mCaptureCallback, backgroundHandler);
                             } catch (CameraAccessException e) {
-                                e.printStackTrace();
+                                Log.e(TAG, "Error creating preview session", e);
                             }
                         }
 
@@ -721,7 +814,7 @@ public class CameraFragment extends Fragment
                     }, null
             );
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error creating preview session", e);
         }
     }
 
@@ -778,7 +871,7 @@ public class CameraFragment extends Fragment
             captureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error locking focus", e);
         }
     }
 
@@ -796,7 +889,7 @@ public class CameraFragment extends Fragment
             captureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error running pre-capture sequence", e);
         }
     }
 
@@ -831,7 +924,14 @@ public class CameraFragment extends Fragment
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                         @NonNull CaptureRequest request,
                         @NonNull TotalCaptureResult result) {
-                    showToast("Saved: " + outputFile);
+
+                    if (mqttClient != null) {
+                        try {
+                            mqttClient.publish("camera/image_saved", new MqttMessage());
+                        } catch (MqttException e) {
+                            Log.e(TAG, "Error notifying snapshot", e);
+                        }
+                    }
                     Log.d(TAG, outputFile.toString());
                     unlockFocus();
                 }
@@ -840,7 +940,7 @@ public class CameraFragment extends Fragment
             captureSession.stopRepeating();
             captureSession.capture(captureBuilder.build(), CaptureCallback, null);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error capturing image", e);
         }
     }
 
@@ -875,7 +975,7 @@ public class CameraFragment extends Fragment
             captureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error unlocking focus", e);
         }
     }
 
@@ -907,44 +1007,31 @@ public class CameraFragment extends Fragment
     }
 
     /**
-     * Saves a JPEG {@link Image} into the specified {@link File}.
+     * Publishes the image to an MQTT topic.
      */
-    private static class ImageSaver implements Runnable {
+    private static class ImagePublisher implements Runnable {
+        private final Image image;
+        private final MqttAndroidClient mqttClient;
+        private final String topic;
 
-        /**
-         * The JPEG image
-         */
-        private final Image mImage;
-        /**
-         * The outputFile we save the image into.
-         */
-        private final File mFile;
-
-        ImageSaver(Image image, File file) {
-            mImage = image;
-            mFile = file;
+        ImagePublisher(@NonNull Image image, @NonNull MqttAndroidClient mqttClient,
+                @NonNull String topic) {
+            this.image = image;
+            this.mqttClient = mqttClient;
+            this.topic = topic;
         }
 
         @Override
         public void run() {
-            ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
+            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
-            FileOutputStream output = null;
             try {
-                output = new FileOutputStream(mFile);
-                output.write(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
+                mqttClient.publish(topic, bytes, 0, false);
+            } catch (MqttException e) {
+                Log.e(TAG, "Error publishing image", e);
             } finally {
-                mImage.close();
-                if (null != output) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                image.close();
             }
         }
     }
@@ -952,7 +1039,7 @@ public class CameraFragment extends Fragment
     /**
      * Compares two {@code Size}s based on their areas.
      */
-    static class CompareSizesByArea implements Comparator<Size> {
+    private static class CompareSizesByArea implements Comparator<Size> {
 
         @Override
         public int compare(Size lhs, Size rhs) {
@@ -979,15 +1066,11 @@ public class CameraFragment extends Fragment
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Activity activity = getActivity();
+            Activity activity = getActivity();
             return new AlertDialog.Builder(activity)
                     .setMessage(getArguments().getString(ARG_MESSAGE))
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            activity.finish();
-                        }
-                    })
+                    .setPositiveButton(android.R.string.ok,
+                            (dialogInterface, i) -> activity.finish())
                     .create();
         }
     }
@@ -999,25 +1082,18 @@ public class CameraFragment extends Fragment
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Fragment parent = getParentFragment();
+            Fragment parent = getParentFragment();
             return new AlertDialog.Builder(getActivity())
                     .setMessage(R.string.request_permission)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            FragmentCompat.requestPermissions(parent,
+                    .setPositiveButton(android.R.string.ok,
+                            (dialog, which) -> FragmentCompat.requestPermissions(parent,
                                     new String[] { Manifest.permission.CAMERA },
-                                    REQUEST_CAMERA_PERMISSION);
-                        }
-                    })
+                                    REQUEST_CAMERA_PERMISSION))
                     .setNegativeButton(android.R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Activity activity = parent.getActivity();
-                                    if (activity != null) {
-                                        activity.finish();
-                                    }
+                            (dialog, which) -> {
+                                Activity activity = parent.getActivity();
+                                if (activity != null) {
+                                    activity.finish();
                                 }
                             })
                     .create();

@@ -1,6 +1,7 @@
 package info.staticfree.timelapsecamera;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -47,6 +48,7 @@ public class CameraActivity extends AppCompatActivity {
         String[] items = getResources().getStringArray(R.array.drawer_options);
         leftDrawer.setAdapter(
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
+        showCamera();
     }
 
     @Override
@@ -78,7 +80,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void showSettings() {
-
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
     private void showCamera() {
