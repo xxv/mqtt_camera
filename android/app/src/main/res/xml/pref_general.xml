@@ -7,7 +7,7 @@
         android:title="@string/pref_mqtt_remote_control_title" />
 
     <EditTextPreference
-        android:defaultValue="example.com"
+        android:defaultValue="@string/pref_mqtt_hostname_default"
         android:dependency="mqtt_remote_enable"
         android:inputType="textUri"
         android:key="mqtt_hostname"
@@ -17,7 +17,7 @@
         android:title="@string/pref_mqtt_hostname_title" />
 
     <EditTextPreference
-        android:defaultValue="1883"
+        android:defaultValue="@string/pref_mqtt_port_default"
         android:dependency="mqtt_remote_enable"
         android:inputType="number"
         android:key="mqtt_port"
@@ -29,15 +29,21 @@
         android:defaultValue="false"
         android:dependency="mqtt_remote_enable"
         android:key="mqtt_ssl"
-        android:title="Use SSL/TLS" />
+        android:title="@string/pref_mqtt_ssl_title" />
     <EditTextPreference
         android:dependency="mqtt_remote_enable"
         android:inputType="textShortMessage|textNoSuggestions"
         android:key="mqtt_username"
-        android:title="User Name" />
+        android:title="@string/pref_mqtt_username_title" />
     <EditTextPreference
         android:dependency="mqtt_remote_enable"
         android:inputType="textPassword"
         android:key="mqtt_password"
-        android:title="Password" />
+        android:title="@string/pref_mqtt_password_title" />
+    <EditTextPreference
+        android:dependency="mqtt_remote_enable"
+        android:inputType="textShortMessage|textNoSuggestions"
+        android:key="mqtt_uuid"
+        android:summary="@string/pref_mqtt_uuid_summary"
+        android:title="@string/pref_mqtt_uuid_title" />
 </PreferenceScreen>

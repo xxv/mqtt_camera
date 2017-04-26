@@ -78,12 +78,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class CameraFragment extends Fragment
         implements View.OnClickListener, FragmentCompat.OnRequestPermissionsResultCallback {
 
+    private static final String KEY_UUID = "mqtt_uuid";
     MqttAndroidClient mqttClient;
     /**
      * Conversion from screen rotation to JPEG orientation.
@@ -256,7 +258,7 @@ public class CameraFragment extends Fragment
         public void onImageAvailable(ImageReader reader) {
             //backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), outputFile));
             backgroundHandler.post(new ImagePublisher(reader.acquireNextImage(), mqttClient,
-                    "camera/image"));
+                    getMqttSubTopic("image")));
         }
     };
 
@@ -358,6 +360,7 @@ public class CameraFragment extends Fragment
             process(result);
         }
     };
+    private String uuid;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -437,7 +440,22 @@ public class CameraFragment extends Fragment
         super.onActivityCreated(savedInstanceState);
         outputFile = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
                 "pic.jpg");
+        this.uuid = getOrCreateId();
         connectMqtt();
+    }
+
+    private String getOrCreateId() {
+        SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+        String uuid = preferences.getString(KEY_UUID, null);
+
+        if (uuid == null) {
+            uuid = UUID.randomUUID().toString();
+            preferences.edit().putString(KEY_UUID, uuid).apply();
+        }
+
+        return uuid;
     }
 
     @Override
@@ -488,6 +506,11 @@ public class CameraFragment extends Fragment
             public void connectComplete(boolean reconnect, String serverURI) {
                 Toast.makeText(getActivity(), "Connected to: " + serverURI, Toast.LENGTH_SHORT)
                         .show();
+                try {
+                    mqttClient.publish(getMqttSubTopic("status"), "connected".getBytes(), 0, true);
+                } catch (MqttException e) {
+                    Log.e(TAG, "error publishing status", e);
+                }
             }
 
             @Override
@@ -507,6 +530,7 @@ public class CameraFragment extends Fragment
         });
 
         MqttConnectOptions connectOptions = new MqttConnectOptions();
+        connectOptions.setWill(getMqttSubTopic("status"), "disconnected".getBytes(), 0, true);
         String username = preferences.getString("mqtt_username", null);
 
         if (!TextUtils.isEmpty(username)) {
@@ -528,7 +552,7 @@ public class CameraFragment extends Fragment
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
                     try {
-                        mqttClient.subscribe("camera/#", 0);
+                        mqttClient.subscribe(getMqttSubTopic("#"), 0);
                     } catch (MqttException e) {
                         Log.e(TAG, "Error subscribing", e);
                     }
@@ -544,8 +568,13 @@ public class CameraFragment extends Fragment
         }
     }
 
-    private void onMqttMessage(String topic, MqttMessage message) {
-        if ("camera/shutter".equals(topic)) {
+    @NonNull
+    private String getMqttSubTopic(@NonNull String subTopic) {
+        return "camera/" + uuid + '/' + subTopic;
+    }
+
+    private void onMqttMessage(@NonNull String topic, @NonNull MqttMessage message) {
+        if (getMqttSubTopic("shutter").equals(topic)) {
             takePicture();
         }
     }
@@ -674,6 +703,7 @@ public class CameraFragment extends Fragment
                 mFlashSupported = available == null ? false : available;
 
                 this.cameraId = cameraId;
+
                 return;
             }
         } catch (CameraAccessException e) {
@@ -927,7 +957,8 @@ public class CameraFragment extends Fragment
 
                     if (mqttClient != null) {
                         try {
-                            mqttClient.publish("camera/image_saved", new MqttMessage());
+                            mqttClient
+                                    .publish(getMqttSubTopic("image_saved"), new MqttMessage());
                         } catch (MqttException e) {
                             Log.e(TAG, "Error notifying snapshot", e);
                         }
