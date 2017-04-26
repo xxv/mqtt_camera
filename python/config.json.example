@@ -1,0 +1,8 @@
+{
+  "host": "example.org",
+  "port": 1883,
+  "user":"foo",
+  "password": "bar",
+  "output_dir": "images",
+  "ca_certs": "/path/to/full/cert/stack.pem"
+}
