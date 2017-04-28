@@ -270,7 +270,7 @@ public class CameraFragment extends Fragment
      *
      * @see #captureCallback
      */
-    private int mState = STATE_PREVIEW;
+    private int state = STATE_PREVIEW;
 
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
@@ -280,12 +280,12 @@ public class CameraFragment extends Fragment
     /**
      * Whether the current camera device supports Flash or not.
      */
-    private boolean mFlashSupported;
+    private boolean flashSupported;
 
     /**
      * Orientation of the camera sensor
      */
-    private int mSensorOrientation;
+    private int sensorOrientation;
 
     /**
      * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
@@ -294,26 +294,30 @@ public class CameraFragment extends Fragment
             = new CameraCaptureSession.CaptureCallback() {
 
         private void process(CaptureResult result) {
-            switch (mState) {
+            switch (state) {
                 case STATE_PREVIEW: {
                     // We have nothing to do when the camera preview is working normally.
                     break;
                 }
                 case STATE_WAITING_LOCK: {
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-                    if (afState == null) {
-                        captureStillPicture();
-                    } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-                        // CONTROL_AE_STATE can be null on some devices
-                        Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-                        if (aeState == null ||
-                                aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-                            mState = STATE_PICTURE_TAKEN;
+                    if (autoFocus) {
+                        if (afState == null) {
                             captureStillPicture();
-                        } else {
-                            runPrecaptureSequence();
+                        } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
+                                CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                            // CONTROL_AE_STATE can be null on some devices
+                            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeState == null ||
+                                    aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
+                                state = STATE_PICTURE_TAKEN;
+                                captureStillPicture();
+                            } else {
+                                runPrecaptureSequence();
+                            }
                         }
+                    } else {
+                        state = STATE_PREVIEW;
                     }
                     break;
                 }
@@ -323,7 +327,7 @@ public class CameraFragment extends Fragment
                     if (aeState == null ||
                             aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                             aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-                        mState = STATE_WAITING_NON_PRECAPTURE;
+                        state = STATE_WAITING_NON_PRECAPTURE;
                     }
                     break;
                 }
@@ -331,7 +335,7 @@ public class CameraFragment extends Fragment
                     // CONTROL_AE_STATE can be null on some devices
                     Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                     if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-                        mState = STATE_PICTURE_TAKEN;
+                        state = STATE_PICTURE_TAKEN;
                         captureStillPicture();
                     }
                     break;
@@ -383,6 +387,16 @@ public class CameraFragment extends Fragment
     @Override
     public void refocus() {
         lockFocus();
+    }
+
+    @Override
+    public void setAutoFocus(boolean autoFocus) {
+        this.autoFocus = autoFocus;
+
+        View view = getView();
+        if (view != null) {
+            view.findViewById(R.id.focus).setEnabled(!autoFocus);
+        }
     }
 
     @Override
@@ -486,18 +500,18 @@ public class CameraFragment extends Fragment
                 // coordinate.
                 int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
                 //noinspection ConstantConditions
-                mSensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
                 boolean swappedDimensions = false;
                 switch (displayRotation) {
                     case Surface.ROTATION_0:
                     case Surface.ROTATION_180:
-                        if (mSensorOrientation == 90 || mSensorOrientation == 270) {
+                        if (sensorOrientation == 90 || sensorOrientation == 270) {
                             swappedDimensions = true;
                         }
                         break;
                     case Surface.ROTATION_90:
                     case Surface.ROTATION_270:
-                        if (mSensorOrientation == 0 || mSensorOrientation == 180) {
+                        if (sensorOrientation == 0 || sensorOrientation == 180) {
                             swappedDimensions = true;
                         }
                         break;
@@ -546,7 +560,7 @@ public class CameraFragment extends Fragment
 
                 // Check if the flash is supported.
                 Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-                mFlashSupported = available == null ? false : available;
+                flashSupported = available == null ? false : available;
 
                 this.cameraId = cameraId;
 
@@ -754,7 +768,7 @@ public class CameraFragment extends Fragment
             previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #captureCallback to wait for the lock.
-            mState = STATE_WAITING_LOCK;
+            state = STATE_WAITING_LOCK;
             captureSession.capture(previewRequestBuilder.build(), captureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
@@ -772,7 +786,7 @@ public class CameraFragment extends Fragment
             previewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
             // Tell #captureCallback to wait for the precapture sequence to be set.
-            mState = STATE_WAITING_PRECAPTURE;
+            state = STATE_WAITING_PRECAPTURE;
             captureSession.capture(previewRequestBuilder.build(), captureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
@@ -818,9 +832,10 @@ public class CameraFragment extends Fragment
                         @NonNull TotalCaptureResult result) {
 
                     Log.d(TAG, outputFile.toString());
-                    if (!autoFocus) {
+                    if (autoFocus) {
                         unlockFocus();
                     }
+                    restartPreview();
                 }
             };
 
@@ -842,7 +857,7 @@ public class CameraFragment extends Fragment
         // We have to take that into account and rotate JPEG properly.
         // For devices with orientation of 90, we simply return our mapping from ORIENTATIONS.
         // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
-        return (ORIENTATIONS.get(rotation) + mSensorOrientation + 270) % 360;
+        return (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360;
     }
 
     /**
@@ -857,8 +872,15 @@ public class CameraFragment extends Fragment
             setAutoFlash(previewRequestBuilder);
             captureSession.capture(previewRequestBuilder.build(), captureCallback,
                     backgroundHandler);
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Error unlocking focus", e);
+        }
+    }
+
+    private void restartPreview() {
+        try {
             // After this, the camera will go back to the normal state of preview.
-            mState = STATE_PREVIEW;
+            state = STATE_PREVIEW;
             captureSession.setRepeatingRequest(previewRequest, captureCallback,
                     backgroundHandler);
         } catch (CameraAccessException e) {
@@ -867,7 +889,7 @@ public class CameraFragment extends Fragment
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
-        if (mFlashSupported) {
+        if (flashSupported) {
             requestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_MODE_ON);
         }

@@ -142,6 +142,8 @@ public class MqttRemote {
             camera.takePicture();
         } else if (getMqttSubTopic("focus").equals(topic)) {
             camera.refocus();
+        } else if (getMqttSubTopic("setting/autofocus").equals(topic)) {
+            camera.setAutoFocus("1".equals(new String(message.getPayload())));
         }
     }
 
@@ -163,5 +165,7 @@ public class MqttRemote {
         void takePicture();
 
         void refocus();
+
+        void setAutoFocus(boolean autoFocus);
     }
 }

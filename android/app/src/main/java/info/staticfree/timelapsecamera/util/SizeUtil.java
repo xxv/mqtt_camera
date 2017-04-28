@@ -9,9 +9,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-
 public final class SizeUtil {
     private static final String TAG = SizeUtil.class.getSimpleName();
+
     private SizeUtil() {}
 
     /**
