@@ -16,6 +16,7 @@ import android.widget.ListView;
 
 import info.staticfree.timelapsecamera.R;
 import info.staticfree.timelapsecamera.fragment.CameraFragment;
+import info.staticfree.timelapsecamera.fragment.KeepScreenOnFragment;
 
 public class CameraActivity extends AppCompatActivity {
     private ListView leftDrawer;
@@ -30,18 +31,7 @@ public class CameraActivity extends AppCompatActivity {
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         leftDrawer = (ListView) findViewById(R.id.left_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.drawer_open,
-                R.string.drawer_close) {
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                super.onDrawerClosed(drawerView);
-                //getActionBar().setTitle(R.string.app_name);
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                super.onDrawerOpened(drawerView);
-            }
-        };
+                R.string.drawer_close);
 
         leftDrawer.setOnItemClickListener(new DrawerItemClickListener());
 
@@ -52,6 +42,11 @@ public class CameraActivity extends AppCompatActivity {
         leftDrawer.setAdapter(
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
         showCamera();
+
+        if (savedInstanceState == null) {
+            getFragmentManager().beginTransaction()
+                    .add(new KeepScreenOnFragment(), KeepScreenOnFragment.class.getName()).commit();
+        }
     }
 
     @Override

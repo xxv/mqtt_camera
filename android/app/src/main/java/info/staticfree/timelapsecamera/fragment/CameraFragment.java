@@ -423,7 +423,7 @@ public class CameraFragment extends Fragment
         }
 
         if (mqttRemote != null) {
-            mqttRemote.connect();
+            mqttRemote.onResume();
         }
     }
 

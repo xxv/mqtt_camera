@@ -2,6 +2,7 @@ package info.staticfree.timelapsecamera.mqtt;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.BatteryManager;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -16,8 +17,12 @@ import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.UUID;
+
+import info.staticfree.timelapsecamera.BatteryMonitor;
 
 public class MqttRemote {
     private static final String TAG = MqttRemote.class.getSimpleName();
@@ -28,23 +33,67 @@ public class MqttRemote {
     private final String uuid;
     @NonNull
     private final Context context;
+    @NonNull
     private final RemoteControlCamera camera;
+    private final BatteryMonitor.BatteryObserver batteryObserver = new BatteryMonitor
+            .BatteryObserver() {
+        @Override
+        public void onBatteryUpdate(boolean isCharging, int chargePlug, int percent) {
+            if (mqttClient != null && mqttClient.isConnected()) {
+                JSONObject battery = new JSONObject();
+                try {
+                    battery.put("charging", isCharging);
+                    battery.put("percentage", percent);
+
+                    switch (chargePlug) {
+                        case BatteryManager.BATTERY_PLUGGED_AC:
+                            battery.put("plugType", "ac");
+                            break;
+                        case BatteryManager.BATTERY_PLUGGED_USB:
+                            battery.put("plugType", "usb");
+                            break;
+                        case BatteryManager.BATTERY_PLUGGED_WIRELESS:
+                            battery.put("plugType", "wireless");
+                            break;
+                        case 0:
+                            battery.put("plugType", "none");
+                            break;
+                        default:
+                            battery.put("plugType", "unknown");
+                    }
+
+                    publish("battery", battery.toString().getBytes());
+                } catch (JSONException e) {
+                    Log.e(TAG, "Error writing JSON", e);
+                }
+            }
+        }
+    };
 
     private MqttAndroidClient mqttClient;
+    @NonNull
+    private final BatteryMonitor batteryMonitor;
 
     public MqttRemote(@NonNull Context context, @NonNull RemoteControlCamera camera) {
         this.context = context;
         this.camera = camera;
         uuid = getOrCreateId();
+        batteryMonitor = new BatteryMonitor(context, batteryObserver);
     }
 
     public void onPause() {
         if (mqttClient != null) {
             mqttClient.close();
         }
+        batteryMonitor.onPause();
     }
 
-    public void connect() {
+    public void onResume() {
+        connect();
+        batteryMonitor.onResume();
+    }
+
+    private void connect() {
         SharedPreferences preferences =
                 PreferenceManager.getDefaultSharedPreferences(context);
         if (!preferences.getBoolean("mqtt_remote_enable", false)) {
