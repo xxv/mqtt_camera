@@ -57,6 +57,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.File;
@@ -65,11 +66,11 @@ import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import info.staticfree.timelapsecamera.R;
 import info.staticfree.timelapsecamera.image.ImagePublisher;
+import info.staticfree.timelapsecamera.mqtt.MqttRemote;
 import info.staticfree.timelapsecamera.util.SizeUtil;
 import info.staticfree.timelapsecamera.view.AutoFitTextureView;
-import info.staticfree.timelapsecamera.R;
-import info.staticfree.timelapsecamera.mqtt.MqttRemote;
 
 @SuppressWarnings("MagicNumber")
 public class CameraFragment extends Fragment
@@ -886,6 +887,17 @@ public class CameraFragment extends Fragment
         } catch (CameraAccessException e) {
             Log.e(TAG, "Error unlocking focus", e);
         }
+    }
+
+    @Override
+    public void setDimScreen(boolean dimScreen) {
+        WindowManager.LayoutParams lp = getActivity().getWindow().getAttributes();
+        if (dimScreen) {
+            lp.screenBrightness = 0;
+        } else {
+            lp.screenBrightness = -1;
+        }
+        getActivity().getWindow().setAttributes(lp);
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {

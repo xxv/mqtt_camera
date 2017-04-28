@@ -191,8 +191,10 @@ public class MqttRemote {
             camera.takePicture();
         } else if (getMqttSubTopic("focus").equals(topic)) {
             camera.refocus();
-        } else if (getMqttSubTopic("setting/autofocus").equals(topic)) {
+        } else if (getMqttSubTopic("setting/auto_focus").equals(topic)) {
             camera.setAutoFocus("1".equals(new String(message.getPayload())));
+        } else if (getMqttSubTopic("setting/dim_screen").equals(topic)) {
+            camera.setDimScreen("1".equals(new String(message.getPayload())));
         }
     }
 
@@ -216,5 +218,7 @@ public class MqttRemote {
         void refocus();
 
         void setAutoFocus(boolean autoFocus);
+
+        void setDimScreen(boolean dimScreen);
     }
 }
