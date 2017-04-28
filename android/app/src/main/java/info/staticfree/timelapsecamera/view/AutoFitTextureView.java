@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package info.staticfree.timelapsecamera;
+package info.staticfree.timelapsecamera.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

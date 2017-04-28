@@ -4,15 +4,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true"
-    tools:context="info.staticfree.timelapsecamera.CameraFragment">
+    tools:context="info.staticfree.timelapsecamera.fragment.CameraFragment">
 
-    <info.staticfree.timelapsecamera.AutoFitTextureView
+    <info.staticfree.timelapsecamera.view.AutoFitTextureView
         android:id="@+id/camera_surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <Button
+    <ImageButton
         android:id="@+id/picture"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:src="@android:drawable/ic_menu_camera" />
+
+    <Button
+        android:id="@+id/focus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@id/picture"
+        android:text="Focus" />
 </RelativeLayout>

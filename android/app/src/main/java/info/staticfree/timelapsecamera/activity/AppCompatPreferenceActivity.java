@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera;
+package info.staticfree.timelapsecamera.activity;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

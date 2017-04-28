@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera;
+package info.staticfree.timelapsecamera.activity;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -12,6 +12,8 @@ import android.support.v7.app.ActionBar;
 import android.view.MenuItem;
 
 import java.util.List;
+
+import info.staticfree.timelapsecamera.R;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On

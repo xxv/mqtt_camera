@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera;
+package info.staticfree.timelapsecamera.image;
 
 import android.media.Image;
 import android.util.Log;
