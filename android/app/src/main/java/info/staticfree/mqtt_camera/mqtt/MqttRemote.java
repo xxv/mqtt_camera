@@ -35,6 +35,9 @@ public class MqttRemote {
     private final Context context;
     @NonNull
     private final RemoteControlCamera camera;
+    @NonNull
+    private final BatteryMonitor batteryMonitor;
+    private MqttAndroidClient mqttClient;
     private final BatteryMonitor.BatteryObserver batteryObserver = new BatteryMonitor
             .BatteryObserver() {
         @Override
@@ -69,10 +72,6 @@ public class MqttRemote {
             }
         }
     };
-
-    private MqttAndroidClient mqttClient;
-    @NonNull
-    private final BatteryMonitor batteryMonitor;
 
     public MqttRemote(@NonNull Context context, @NonNull RemoteControlCamera camera) {
         this.context = context;

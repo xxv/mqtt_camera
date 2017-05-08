@@ -19,8 +19,6 @@ import info.staticfree.mqtt_camera.fragment.CameraFragment;
 import info.staticfree.mqtt_camera.fragment.KeepScreenOnFragment;
 
 public class CameraActivity extends AppCompatActivity {
-    private ListView leftDrawer;
-    private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle drawerToggle;
 
     @Override
@@ -28,16 +26,20 @@ public class CameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        leftDrawer = (ListView) findViewById(R.id.left_drawer);
+        DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ListView leftDrawer = (ListView) findViewById(R.id.left_drawer);
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.drawer_open,
                 R.string.drawer_close);
 
         leftDrawer.setOnItemClickListener(new DrawerItemClickListener());
 
         drawerLayout.addDrawerListener(drawerToggle);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+        }
+
         String[] items = getResources().getStringArray(R.array.drawer_options);
         leftDrawer.setAdapter(
                 new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
@@ -66,17 +68,6 @@ public class CameraActivity extends AppCompatActivity {
         return drawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
     }
 
-    private class DrawerItemClickListener implements AdapterView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            if (position == 0) {
-                showCamera();
-            } else if (position == 1) {
-                showSettings();
-            }
-        }
-    }
-
     private void showSettings() {
         startActivity(new Intent(this, SettingsActivity.class));
     }
@@ -92,5 +83,16 @@ public class CameraActivity extends AppCompatActivity {
         getFragmentManager().beginTransaction()
                 .replace(R.id.fragment_content, fragment, CameraFragment.class.getName())
                 .commit();
+    }
+
+    private class DrawerItemClickListener implements AdapterView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            if (position == 0) {
+                showCamera();
+            } else if (position == 1) {
+                showSettings();
+            }
+        }
     }
 }
