@@ -3,9 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="info.staticfree.timelapsecamera.fragment.CameraFragment">
+    tools:context="info.staticfree.mqtt_camera.fragment.CameraFragment">
 
-    <info.staticfree.timelapsecamera.view.AutoFitTextureView
+    <info.staticfree.mqtt_camera.view.AutoFitTextureView
         android:id="@+id/camera_surface"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera;
+package info.staticfree.mqtt_camera;
 
 import org.junit.Test;
 

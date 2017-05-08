@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="info.staticfree.timelapsecamera.activity.CameraActivity">
+    tools:context="info.staticfree.mqtt_camera.activity.CameraActivity">
 
     <FrameLayout
         android:id="@+id/fragment_content"

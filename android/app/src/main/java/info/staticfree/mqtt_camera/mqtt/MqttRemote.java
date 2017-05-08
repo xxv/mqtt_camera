@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.mqtt;
+package info.staticfree.mqtt_camera.mqtt;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import java.util.UUID;
 
-import info.staticfree.timelapsecamera.BatteryMonitor;
+import info.staticfree.mqtt_camera.BatteryMonitor;
 
 public class MqttRemote {
     private static final String TAG = MqttRemote.class.getSimpleName();

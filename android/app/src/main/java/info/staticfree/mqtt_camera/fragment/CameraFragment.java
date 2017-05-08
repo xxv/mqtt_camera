@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package info.staticfree.timelapsecamera.fragment;
+package info.staticfree.mqtt_camera.fragment;
 
 import android.Manifest;
 import android.app.Activity;
@@ -66,11 +66,11 @@ import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import info.staticfree.timelapsecamera.R;
-import info.staticfree.timelapsecamera.image.ImagePublisher;
-import info.staticfree.timelapsecamera.mqtt.MqttRemote;
-import info.staticfree.timelapsecamera.util.SizeUtil;
-import info.staticfree.timelapsecamera.view.AutoFitTextureView;
+import info.staticfree.mqtt_camera.R;
+import info.staticfree.mqtt_camera.image.ImagePublisher;
+import info.staticfree.mqtt_camera.mqtt.MqttRemote;
+import info.staticfree.mqtt_camera.util.SizeUtil;
+import info.staticfree.mqtt_camera.view.AutoFitTextureView;
 
 @SuppressWarnings("MagicNumber")
 public class CameraFragment extends Fragment

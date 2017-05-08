@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera;
+package info.staticfree.mqtt_camera;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

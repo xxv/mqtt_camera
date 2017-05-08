@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.activity;
+package info.staticfree.mqtt_camera.activity;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

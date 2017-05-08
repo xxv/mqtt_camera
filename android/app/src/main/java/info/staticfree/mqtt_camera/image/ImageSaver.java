@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.image;
+package info.staticfree.mqtt_camera.image;
 
 import android.media.Image;
 import android.util.Log;

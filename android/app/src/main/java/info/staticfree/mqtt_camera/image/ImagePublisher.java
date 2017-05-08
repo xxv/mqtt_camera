@@ -1,11 +1,11 @@
-package info.staticfree.timelapsecamera.image;
+package info.staticfree.mqtt_camera.image;
 
 import android.media.Image;
 import android.support.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 
-import info.staticfree.timelapsecamera.mqtt.MqttRemote;
+import info.staticfree.mqtt_camera.mqtt.MqttRemote;
 
 /**
  * Publishes the image to an MQTT subTopic.

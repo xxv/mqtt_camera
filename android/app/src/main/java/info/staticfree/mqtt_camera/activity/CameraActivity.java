@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.activity;
+package info.staticfree.mqtt_camera.activity;
 
 import android.app.Fragment;
 import android.content.Intent;
@@ -14,9 +14,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import info.staticfree.timelapsecamera.R;
-import info.staticfree.timelapsecamera.fragment.CameraFragment;
-import info.staticfree.timelapsecamera.fragment.KeepScreenOnFragment;
+import info.staticfree.mqtt_camera.R;
+import info.staticfree.mqtt_camera.fragment.CameraFragment;
+import info.staticfree.mqtt_camera.fragment.KeepScreenOnFragment;
 
 public class CameraActivity extends AppCompatActivity {
     private ListView leftDrawer;

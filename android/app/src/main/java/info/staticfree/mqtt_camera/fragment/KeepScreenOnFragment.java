@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.fragment;
+package info.staticfree.mqtt_camera.fragment;
 
 import android.app.Fragment;
 import android.content.BroadcastReceiver;

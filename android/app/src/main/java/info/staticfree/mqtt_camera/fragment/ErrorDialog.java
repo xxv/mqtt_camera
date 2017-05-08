@@ -1,4 +1,4 @@
-package info.staticfree.timelapsecamera.fragment;
+package info.staticfree.mqtt_camera.fragment;
 
 import android.app.Activity;
 import android.app.AlertDialog;
