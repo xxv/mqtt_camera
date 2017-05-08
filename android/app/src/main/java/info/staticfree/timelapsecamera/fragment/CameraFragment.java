@@ -359,6 +359,7 @@ public class CameraFragment extends Fragment
         }
     };
     private boolean autoFocus;
+    private boolean showPreview;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -836,7 +837,13 @@ public class CameraFragment extends Fragment
                     if (autoFocus) {
                         unlockFocus();
                     }
-                    restartPreview();
+                    if (showPreview) {
+                        textureView.setVisibility(View.VISIBLE);
+                        restartPreview();
+                    } else {
+                        state = STATE_PREVIEW;
+                        textureView.setVisibility(View.INVISIBLE);
+                    }
                 }
             };
 
@@ -898,6 +905,7 @@ public class CameraFragment extends Fragment
             lp.screenBrightness = -1;
         }
         getActivity().getWindow().setAttributes(lp);
+        showPreview = !dimScreen;
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {
