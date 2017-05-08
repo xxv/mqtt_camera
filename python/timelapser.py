@@ -1,18 +1,17 @@
 """Create timelapses"""
 
-import os
 import sys
 import time
 from threading import Thread
-from sched import scheduler
 from mqtt_base import MQTTBase
 
 class Timelapser(MQTTBase):
     delay = 60
     lapse_thread = None
 
-    def __init__(self, config_file):
+    def __init__(self, config_file, uuid):
         MQTTBase.__init__(self, config_file=config_file)
+        self.uuid = uuid
 
     def on_connect(self, client, userdata, flags, conn_result):
         self.mqtt.subscribe('timelapser/#')
@@ -63,7 +62,7 @@ class Timelapser(MQTTBase):
             self.lapse_thread = None
 
     def trigger(self):
-        self.mqtt.publish('camera/f01d25b1-a5aa-4ef1-a643-87b14c9b2ca9/shutter')
+        self.mqtt.publish('camera/{}/shutter'.format(self.uuid))
 
     def lapse_loop(self):
         while self.is_running():
@@ -72,11 +71,11 @@ class Timelapser(MQTTBase):
         print("Intervalometer stopped.")
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: {} config.json".format(sys.argv[0]))
+    if len(sys.argv) < 3:
+        print("Usage: {} config.json UUID".format(sys.argv[0]))
         sys.exit(1)
 
-    timelapser = Timelapser(sys.argv[1])
+    timelapser = Timelapser(sys.argv[1], sys.argv[2])
     timelapser.mqtt.will_set('timelapser/status', 'disconnected', 0, True)
     timelapser.connect()
     timelapser.loop()
