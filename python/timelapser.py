@@ -60,6 +60,7 @@ class Timelapser(MQTTBase):
     def stop_lapse(self):
         if self.is_running():
             self.lapse_thread = None
+            print("Stopping intervalometer...")
 
     def trigger(self):
         self.mqtt.publish('camera/{}/shutter'.format(self.uuid))
