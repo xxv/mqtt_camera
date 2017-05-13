@@ -359,7 +359,7 @@ public class CameraFragment extends Fragment
         }
     };
     private boolean autoFocus;
-    private boolean showPreview;
+    private boolean showPreview = true;
 
     /**
      * Shows a {@link Toast} on the UI thread.
@@ -905,7 +905,11 @@ public class CameraFragment extends Fragment
             lp.screenBrightness = -1;
         }
         getActivity().getWindow().setAttributes(lp);
-        showPreview = !dimScreen;
+    }
+
+    @Override
+    public void setDisablePreview(boolean disablePreview) {
+        showPreview = !disablePreview;
     }
 
     private void setAutoFlash(CaptureRequest.Builder requestBuilder) {

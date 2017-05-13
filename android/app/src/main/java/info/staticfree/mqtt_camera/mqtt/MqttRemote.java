@@ -194,6 +194,8 @@ public class MqttRemote {
             camera.setAutoFocus("1".equals(new String(message.getPayload())));
         } else if (getMqttSubTopic("setting/dim_screen").equals(topic)) {
             camera.setDimScreen("1".equals(new String(message.getPayload())));
+        } else if (getMqttSubTopic("setting/disable_preview").equals(topic)) {
+            camera.setDisablePreview("1".equals(new String(message.getPayload())));
         }
     }
 
@@ -219,5 +221,7 @@ public class MqttRemote {
         void setAutoFocus(boolean autoFocus);
 
         void setDimScreen(boolean dimScreen);
+
+        void setDisablePreview(boolean disablePreview);
     }
 }
