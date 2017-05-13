@@ -42,7 +42,6 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.ImageReader;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -60,7 +59,6 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.Semaphore;
@@ -156,8 +154,7 @@ public class CameraFragment extends Fragment
         }
 
         @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture texture) {
-        }
+        public void onSurfaceTextureUpdated(SurfaceTexture texture) {}
     };
 
     /**
@@ -235,11 +232,6 @@ public class CameraFragment extends Fragment
     private ImageReader imageReader;
 
     /**
-     * This is the output file for our picture.
-     */
-    private File outputFile;
-
-    /**
      * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
      * still image is ready to be saved.
      */
@@ -248,7 +240,6 @@ public class CameraFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            //backgroundHandler.post(new ImageSaver(reader.acquireNextImage(), outputFile));
             if (mqttRemote != null) {
                 backgroundHandler.post(new ImagePublisher(reader.acquireNextImage(), mqttRemote,
                         "image"));
@@ -404,8 +395,6 @@ public class CameraFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        outputFile = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                "pic.jpg");
         mqttRemote = new MqttRemote(getActivity(), this);
     }
 
@@ -833,10 +822,10 @@ public class CameraFragment extends Fragment
                         @NonNull CaptureRequest request,
                         @NonNull TotalCaptureResult result) {
 
-                    Log.d(TAG, outputFile.toString());
                     if (autoFocus) {
                         unlockFocus();
                     }
+
                     if (showPreview) {
                         textureView.setVisibility(View.VISIBLE);
                         restartPreview();
