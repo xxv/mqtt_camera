@@ -138,7 +138,7 @@ public class MqttRemote {
         String username = preferences.getString("mqtt_username", null);
 
         if (!TextUtils.isEmpty(username)) {
-            connectOptions.setUserName("steve");
+            connectOptions.setUserName(username);
         }
 
         String password = preferences.getString("mqtt_password", null);
