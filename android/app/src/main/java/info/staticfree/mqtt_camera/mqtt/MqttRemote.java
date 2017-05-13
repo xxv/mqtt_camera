@@ -82,7 +82,11 @@ public class MqttRemote {
 
     public void onPause() {
         if (mqttClient != null) {
-            mqttClient.close();
+            try {
+                mqttClient.disconnect();
+            } catch (MqttException e) {
+                Log.e(TAG, "Error disconnecting", e);
+            }
         }
         batteryMonitor.onPause();
     }
@@ -134,6 +138,7 @@ public class MqttRemote {
         });
 
         MqttConnectOptions connectOptions = new MqttConnectOptions();
+        connectOptions.setAutomaticReconnect(true);
         connectOptions.setWill(getMqttSubTopic("status"), "disconnected".getBytes(), 0, true);
         String username = preferences.getString("mqtt_username", null);
 
