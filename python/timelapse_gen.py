@@ -4,8 +4,9 @@ import os
 import sys
 
 class TimelapseGen():
-    def __init__(self, image_dir, start_file, end_file):
+    def __init__(self, image_dir, dest_dir, start_file, end_file):
         self.image_dir = image_dir
+        self.dest_dir = dest_dir
         self.start_file = start_file
         self.end_file = end_file
 
@@ -16,15 +17,19 @@ class TimelapseGen():
         return subset
 
     def make_links(self):
+        dest_full = os.path.realpath(self.dest_dir)
+        image_full = os.path.realpath(self.image_dir)
+        image_rel = os.path.relpath(image_full, dest_full)
+
         for i, img in enumerate(self.frames()):
-            symlink_name = os.path.join(self.image_dir, "anim{:08d}.jpg".format(i))
-            source = os.path.join(self.image_dir, img)
+            symlink_name = os.path.join(self.dest_dir, "anim{:08d}.jpg".format(i))
+            source = os.path.join(image_rel, img)
             print("dest {} source {}".format(symlink_name, source))
             os.symlink(source, symlink_name)
 
 def main():
-    if len(sys.argv) < 4:
-        print("""Usage: {} IMAGE_DIR START_FILE END_FILE
+    if len(sys.argv) < 5:
+        print("""Usage: {} IMAGE_DIR DEST_DIR START_FILE END_FILE
 
 where START_FILE and END_FILE are in IMAGE_DIR and where START_FILE comes
 before END_FILE chronologically / alphabetically.
@@ -36,7 +41,7 @@ From there you can do something like:
 to generate a video from the stills.
                 """.format(sys.argv[0]))
         sys.exit(1)
-    lapse = TimelapseGen(sys.argv[1], sys.argv[2], sys.argv[3])
+    lapse = TimelapseGen(*sys.argv[1:])
     lapse.make_links()
 
 if __name__ == '__main__':
