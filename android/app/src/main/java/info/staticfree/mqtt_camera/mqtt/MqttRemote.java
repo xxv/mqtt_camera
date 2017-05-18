@@ -118,6 +118,7 @@ public class MqttRemote {
                         .show();
                 try {
                     mqttClient.publish(getMqttSubTopic("status"), "connected".getBytes(), 0, true);
+                    mqttClient.subscribe(getMqttSubTopic("#"), 0);
                 } catch (MqttException e) {
                     Log.e(TAG, "error publishing status", e);
                 }
@@ -138,7 +139,6 @@ public class MqttRemote {
         });
 
         MqttConnectOptions connectOptions = new MqttConnectOptions();
-        connectOptions.setAutomaticReconnect(true);
         connectOptions.setWill(getMqttSubTopic("status"), "disconnected".getBytes(), 0, true);
         String username = preferences.getString("mqtt_username", null);
 
@@ -159,13 +159,7 @@ public class MqttRemote {
             Log.d(TAG, "Connecting to MQTT...");
             mqttClient.connect(connectOptions, null, new IMqttActionListener() {
                 @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    try {
-                        mqttClient.subscribe(getMqttSubTopic("#"), 0);
-                    } catch (MqttException e) {
-                        Log.e(TAG, "Error subscribing", e);
-                    }
-                }
+                public void onSuccess(IMqttToken asyncActionToken) {}
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
